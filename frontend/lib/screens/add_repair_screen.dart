@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gamewala_repairs/services/api_service.dart';
 import 'package:path/path.dart' as p;
-import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class AddRepairScreen extends StatefulWidget {
   const AddRepairScreen({super.key, required this.api});
@@ -33,13 +34,23 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
   ];
 
   // Voice note
-  final _recorder = AudioRecorder();
+  final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
   String? _voiceFilePath;
+  bool _recReady = false;
 
   @override
   void initState() {
     super.initState();
+    _initRecorder();
     _loadMasters();
+  }
+
+  Future<void> _initRecorder() async {
+    await Permission.microphone.request();
+    final status = await Permission.microphone.status;
+    if (!status.isGranted) return;
+    await _recorder.openRecorder();
+    _recReady = true;
   }
 
   Future<void> _loadMasters() async {
@@ -66,6 +77,7 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
     _issue.dispose();
     _estimated.dispose();
     _notes.dispose();
+    _recorder.closeRecorder();
     super.dispose();
   }
 
@@ -158,31 +170,24 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
   }
 
   Future<void> _toggleRecord() async {
-    final hasPerm = await _recorder.hasPermission();
-    if (!hasPerm) {
-      if (!mounted) return;
+    if (!_recReady) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Microphone permission denied'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Microphone not available'), backgroundColor: Colors.red),
       );
       return;
     }
-
-    if (await _recorder.isRecording()) {
-      final path = await _recorder.stop();
+    if (_recorder.isRecording) {
+      final path = await _recorder.stopRecorder();
       setState(() => _voiceFilePath = path);
       return;
     }
-
     final dir = await getTemporaryDirectory();
-    final path = p.join(dir.path, 'voice_note_${DateTime.now().millisecondsSinceEpoch}.m4a');
-
-    await _recorder.start(
-      const RecordConfig(
-        encoder: AudioEncoder.aacLc,
-        bitRate: 128000,
-        sampleRate: 44100,
-      ),
-      path: path,
+    final path = p.join(dir.path, 'voice_note_${DateTime.now().millisecondsSinceEpoch}.aac');
+    await _recorder.startRecorder(
+      toFile: path,
+      codec: Codec.aacADTS,
+      bitRate: 128000,
+      sampleRate: 44100,
     );
     setState(() => _voiceFilePath = null);
   }
@@ -198,7 +203,7 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
         if (await f.exists()) {
           final bytes = await f.readAsBytes();
           b64 = base64Encode(bytes);
-          final ext = p.extension(_voiceFilePath!).isNotEmpty ? p.extension(_voiceFilePath!) : '.m4a';
+          final ext = p.extension(_voiceFilePath!).isNotEmpty ? p.extension(_voiceFilePath!) : '.aac';
           filename = 'voice_note$ext';
         }
       }
