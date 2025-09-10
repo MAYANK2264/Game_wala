@@ -36,6 +36,14 @@ jobs:
             flutter create .
           fi
 
+      - name: Ensure permissions in AndroidManifest.xml
+        working-directory: frontend
+        run: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          add_perm(){ if ! grep -q "$1" "$MANIFEST"; then awk 'NR==1{print; print "    <uses-permission android:name=\"'$1'\" />"; next}1' "$MANIFEST" > tmp && mv tmp "$MANIFEST"; fi }
+          add_perm android.permission.INTERNET
+          add_perm android.permission.RECORD_AUDIO
+
       - name: Fetch dependencies
         working-directory: frontend
         run: flutter pub get

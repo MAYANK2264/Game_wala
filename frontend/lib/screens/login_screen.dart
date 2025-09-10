@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, required this.onLogin});
-  final void Function(String role) onLogin;
+  final void Function(String role, String? actorName) onLogin;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -10,6 +10,13 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   String _role = 'Employee';
+  final _actor = TextEditingController();
+
+  @override
+  void dispose() {
+    _actor.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,11 +44,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   labelText: 'Select Role',
                 ),
               ),
+              const SizedBox(height: 12),
+              if (_role == 'Employee') TextField(
+                controller: _actor,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Your Name (must match AssignedTo)',
+                ),
+              ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () => widget.onLogin(_role),
+                  onPressed: () => widget.onLogin(_role, _actor.text.trim().isEmpty ? null : _actor.text.trim()),
                   icon: const Icon(Icons.login),
                   label: const Text('Continue'),
                   style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),

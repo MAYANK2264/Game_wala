@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gamewala_repairs/services/api_service.dart';
+import 'package:path/path.dart' as p;
+import 'package:record/record.dart';
 
 class AddRepairScreen extends StatefulWidget {
   const AddRepairScreen({super.key, required this.api});
@@ -20,12 +24,39 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
   String _assignedTo = 'Unassigned';
   bool _loading = false;
 
-  final _products = const [
+  List<String> _products = const [
     'PlayStation 5', 'PlayStation 4', 'Xbox Series X', 'Xbox One', 'Nintendo Switch', 'Accessory'
   ];
-  final _assignees = const [
+  List<String> _assignees = const [
     'Unassigned', 'Ravi', 'Aman', 'Priya', 'Kiran'
   ];
+
+  // Voice note
+  final _recorder = AudioRecorder();
+  String? _voiceFilePath;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMasters();
+  }
+
+  Future<void> _loadMasters() async {
+    try {
+      final res = await widget.api.getMasters();
+      if (res['success'] == true) {
+        final m = res['data'] as Map<String, dynamic>;
+        final products = (m['products'] as List?)?.cast<String>() ?? _products;
+        final employees = (m['employees'] as List?)?.cast<String>() ?? _assignees;
+        setState(() {
+          _products = products.isNotEmpty ? products : _products;
+          _assignees = employees.isNotEmpty ? ['Unassigned', ...employees] : _assignees;
+          if (!_products.contains(_product)) _product = _products.first;
+          if (!_assignees.contains(_assignedTo)) _assignedTo = _assignees.first;
+        });
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -96,6 +127,19 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
               maxLines: 2,
               decoration: const InputDecoration(labelText: 'Notes (optional)', border: OutlineInputBorder()),
             ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _toggleRecord,
+                  icon: Icon(_voiceFilePath == null ? Icons.mic : Icons.stop),
+                  label: Text(_voiceFilePath == null ? 'Record Voice Note' : 'Stop Recording'),
+                ),
+                const SizedBox(width: 12),
+                if (_voiceFilePath != null)
+                  Expanded(child: Text(p.basename(_voiceFilePath!), overflow: TextOverflow.ellipsis)),
+              ],
+            ),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
@@ -112,10 +156,43 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
     );
   }
 
+  Future<void> _toggleRecord() async {
+    if (await _recorder.hasPermission() == false) {
+      await _recorder.requestPermission();
+    }
+    if (await _recorder.isRecording()) {
+      final path = await _recorder.stop();
+      setState(() => _voiceFilePath = path);
+      return;
+    }
+    final can = await _recorder.hasPermission();
+    if (!can) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Microphone permission denied'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    await _recorder.start(encoder: AudioEncoder.aacLc, bitRate: 128000, samplingRate: 44100);
+    setState(() => _voiceFilePath = null);
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     try {
+      String? b64;
+      String? filename;
+      if (_voiceFilePath != null) {
+        final f = File(_voiceFilePath!);
+        if (await f.exists()) {
+          final bytes = await f.readAsBytes();
+          b64 = base64Encode(bytes);
+          final ext = p.extension(_voiceFilePath!).isNotEmpty ? p.extension(_voiceFilePath!) : '.m4a';
+          filename = 'voice_note$ext';
+        }
+      }
+
       final res = await widget.api.addRepair(
         customerName: _name.text.trim(),
         phone: _phone.text.trim(),
@@ -124,6 +201,8 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
         estimatedTime: _estimated.text.trim(),
         assignedTo: _assignedTo,
         notes: _notes.text.trim(),
+        voiceNoteBase64: b64,
+        voiceNoteFilename: filename,
       );
       if (res['success'] == true) {
         final id = res['repairId'];
@@ -132,6 +211,7 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
           SnackBar(content: Text('Added. RepairID: $id'), backgroundColor: Colors.green),
         );
         _formKey.currentState!.reset();
+        setState(() { _voiceFilePath = null; _product = _products.first; _assignedTo = _assignees.first; });
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

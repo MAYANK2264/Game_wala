@@ -3,8 +3,10 @@ import 'package:gamewala_repairs/services/api_service.dart';
 import 'package:gamewala_repairs/widgets/status_chip.dart';
 
 class UpdateStatusScreen extends StatefulWidget {
-  const UpdateStatusScreen({super.key, required this.api});
+  const UpdateStatusScreen({super.key, required this.api, required this.role, required this.actorName});
   final ApiService api;
+  final String role;
+  final String? actorName;
 
   @override
   State<UpdateStatusScreen> createState() => _UpdateStatusScreenState();
@@ -35,6 +37,8 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            Text('Role: ${widget.role}${widget.actorName != null ? ' (${widget.actorName})' : ''}'),
+            const SizedBox(height: 8),
             TextFormField(
               controller: _repairId,
               decoration: const InputDecoration(labelText: 'RepairID', border: OutlineInputBorder()),
@@ -79,6 +83,8 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
         repairId: _repairId.text.trim(),
         status: _status,
         notes: _notes.text.trim(),
+        role: widget.role,
+        actorName: widget.actorName,
       );
       if (!mounted) return;
       if (res['success'] == true) {

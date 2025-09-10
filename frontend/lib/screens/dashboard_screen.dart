@@ -21,6 +21,7 @@ class DashboardScreen extends StatelessWidget {
             _bigButton(context, Icons.sync, 'Update Status', () => onNavigate('/update')),
             _bigButton(context, Icons.search, 'Search Repair', () => onNavigate('/search')),
             if (isOwner) _bigButton(context, Icons.list, 'All Repairs', () => onNavigate('/all')),
+            if (isOwner) _bigButton(context, Icons.settings, 'Manage Masters', () => onNavigate('/masters')),
           ],
         ),
       ),
