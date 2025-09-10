@@ -157,23 +157,28 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
   }
 
   Future<void> _toggleRecord() async {
-    if (await _recorder.hasPermission() == false) {
-      await _recorder.requestPermission();
-    }
-    if (await _recorder.isRecording()) {
-      final path = await _recorder.stop();
-      setState(() => _voiceFilePath = path);
-      return;
-    }
-    final can = await _recorder.hasPermission();
-    if (!can) {
+    final hasPerm = await _recorder.hasPermission();
+    if (!hasPerm) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Microphone permission denied'), backgroundColor: Colors.red),
       );
       return;
     }
-    await _recorder.start(encoder: AudioEncoder.aacLc, bitRate: 128000, samplingRate: 44100);
+
+    if (await _recorder.isRecording()) {
+      final path = await _recorder.stop();
+      setState(() => _voiceFilePath = path);
+      return;
+    }
+
+    await _recorder.start(
+      const RecordConfig(
+        encoder: AudioEncoder.aacLc,
+        bitRate: 128000,
+        sampleRate: 44100,
+      ),
+    );
     setState(() => _voiceFilePath = null);
   }
 
