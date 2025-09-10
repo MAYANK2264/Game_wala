@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:gamewala_repairs/services/api_service.dart';
 import 'package:path/path.dart' as p;
 import 'package:record/record.dart';
+import 'package:path_provider/path_provider.dart';
 
 class AddRepairScreen extends StatefulWidget {
   const AddRepairScreen({super.key, required this.api});
@@ -172,12 +173,16 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
       return;
     }
 
+    final dir = await getTemporaryDirectory();
+    final path = p.join(dir.path, 'voice_note_${DateTime.now().millisecondsSinceEpoch}.m4a');
+
     await _recorder.start(
       const RecordConfig(
         encoder: AudioEncoder.aacLc,
         bitRate: 128000,
         sampleRate: 44100,
       ),
+      path: path,
     );
     setState(() => _voiceFilePath = null);
   }
