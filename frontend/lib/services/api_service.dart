@@ -58,7 +58,7 @@ class ApiService {
       }
     };
     if (ownerEmail != null) payload['ownerEmail'] = ownerEmail!;
-    if (actorEmail != null) payload['actorEmail'] = actorEmail;
+    if (actorEmail != null) payload['actorEmail'] = actorEmail!;
     final body = jsonEncode(payload);
     final resp = await http.post(uri, headers: _headers, body: body).timeout(_timeout);
     return _decode(resp);
