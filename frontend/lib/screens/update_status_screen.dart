@@ -19,11 +19,11 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
   String _status = 'Received';
   bool _loading = false;
 
-  final _statuses = const ['Received', 'In Progress', 'Completed', 'Delivered'];
+  final _statuses = const ['Received', 'In Progress', 'Completed', 'Handed Over'];
 
   @override
   void dispose() {
-    _repairId.dispose();
+    _uniqueId.dispose();
     _notes.dispose();
     super.dispose();
   }
