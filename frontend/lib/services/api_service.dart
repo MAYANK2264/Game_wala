@@ -154,7 +154,15 @@ class ApiService {
   }
 
   Map<String, dynamic> _decode(http.Response resp) {
-    final map = jsonDecode(resp.body) as Map<String, dynamic>;
-    return map;
+    try {
+      final map = jsonDecode(resp.body) as Map<String, dynamic>;
+      return map;
+    } catch (e) {
+      final body = resp.body.trim();
+      if (body.startsWith('<')) {
+        throw FormatException('Apps Script returned HTML (status ${resp.statusCode}). Ensure Web App access is "Anyone" and _baseUrl points to the latest deployment.');
+      }
+      rethrow;
+    }
   }
 }
