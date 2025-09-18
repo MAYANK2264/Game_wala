@@ -8,7 +8,7 @@ Color statusColor(String status) {
       return Colors.amber;
     case 'completed':
       return Colors.green;
-    case 'delivered':
+    case 'handed over':
       return Colors.blue;
     default:
       return Colors.grey;

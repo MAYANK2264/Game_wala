@@ -26,7 +26,7 @@ class _AllRepairsScreenState extends State<AllRepairsScreen> {
     setState(() => _loading = true);
     try {
       final res = await widget.api.getAll();
-      final data = (res['data'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      final data = (res['data'] as List?)?.map((e) => (e as Map).map((k, v) => MapEntry('$k', v))).cast<Map<String, dynamic>>().toList() ?? [];
       setState(() => _rows = data);
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -85,11 +85,11 @@ class _AllRepairsScreenState extends State<AllRepairsScreen> {
       elevation: 1,
       child: Row(
         children: [
-          Expanded(child: headerCell('RepairID', 'RepairID')),
+          Expanded(child: headerCell('UniqueID', 'UniqueID')),
           Expanded(child: headerCell('Customer', 'CustomerName')),
           Expanded(child: headerCell('Product', 'Product')),
           Expanded(child: headerCell('Status', 'Status')),
-          Expanded(child: headerCell('Assigned', 'AssignedTo')),
+          Expanded(child: headerCell('Assigned', 'AssignedEmployee')),
           Expanded(child: headerCell('ETA', 'EstimatedTime')),
         ],
       ),
@@ -103,11 +103,11 @@ class _AllRepairsScreenState extends State<AllRepairsScreen> {
         padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
-            Expanded(child: Text('${row['RepairID']}')),
+            Expanded(child: Text('${row['UniqueID']}')),
             Expanded(child: Text('${row['CustomerName']}')),
             Expanded(child: Text('${row['Product']}')),
             Expanded(child: StatusChip(status: '${row['Status']}')),
-            Expanded(child: Text('${row['AssignedTo']}')),
+            Expanded(child: Text('${row['AssignedEmployee']}')),
             Expanded(child: Text('${row['EstimatedTime']}')),
           ],
         ),

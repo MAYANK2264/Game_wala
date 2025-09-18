@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="flutter_windows">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/flutter_windows.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

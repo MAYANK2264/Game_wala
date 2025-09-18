@@ -1,32 +1,33 @@
 # GameWala Repairs - Google Apps Script Backend
 
-This backend provides a JSON REST API on top of a Google Sheet named `GameWala_Repairs`.
+This backend provides a JSON REST API on top of Google Sheets. On first owner setup it creates a spreadsheet with sheets: `Repairs`, `HandedOver`, `Employees`, `Products`.
 
-Columns (exact order):
+Main sheet `Repairs` columns (exact order):
 
 ```
-RepairID | CustomerName | Phone | Product | Issue | Status | EstimatedTime | DateSubmitted | Notes | AssignedTo
+UniqueID | CustomerName | Phone | Product | FaultDescription | FaultVoiceNoteURL | EstimatedTime | DateSubmitted | EmployeeNotes | EmployeeVoiceNotesURL | Status | AssignedEmployee | HandoverDate
 ```
 
 ## Features
-- Add new repair entry (auto-generates `RepairID`)
-- Update repair status by `RepairID`
-- Fetch all repair entries
-- Search repairs by `RepairID` or `CustomerName`
+- Add repair (auto-generates `UniqueID` per customer name)
+- Update status (Received, In Progress, Completed, Handed Over)
+- Search by `UniqueID`, `CustomerName`, or `Phone`
+- Get all repairs
+- Handover: moves the row to `HandedOver` and stamps date
+- Employee management by email: requestAccess, approve, remove
 
 ## Setup Instructions
-1. Create a Google Sheet named `GameWala_Repairs` (empty is fine; the script will ensure headers).
-2. Open Extensions → Apps Script.
-3. Create a file `Code.gs` and paste the contents from `backend/Code.gs`.
-4. Save the project.
-5. Deploy as a Web App:
+1. Open drive.google.com → New → Google Apps Script.
+2. Create a file `Code.gs` and paste the contents from `backend/Code.gs`.
+3. Save the project.
+4. Deploy as a Web App:
    - Click Deploy → New deployment
    - Select type: Web app
    - Description: GameWala Repairs API
    - Execute as: Me (the owner)
    - Who has access: Anyone with the link (or your org as needed)
    - Click Deploy and authorize
-6. Copy the Web App URL (e.g., `https://script.google.com/macros/s/AKfycb.../exec`). Use this as `BASE_URL` in the Flutter app.
+5. Copy the Web App URL (e.g., `https://script.google.com/macros/s/AKfycb.../exec`). Use this as `_baseUrl` in the Flutter app.
 
 ## API
 All requests/responses are JSON. Use `Content-Type: application/json`.
@@ -36,13 +37,11 @@ Returns all repair entries.
 
 Response:
 ```json
-{ "success": true, "data": [ { "RepairID": "GW-...", "CustomerName": "..." } ] }
+{ "success": true, "data": [ { "UniqueID": "rahul", "CustomerName": "Rahul" } ] }
 ```
 
-### GET /exec?action=search&repairId=GW-...
-Search by `RepairID` (exact match). Alternatively:
-
-GET `/exec?action=search&customerName=John`
+### GET /exec?action=search&uniqueId=rahul`
+Alternatively: `/exec?action=search&customerName=John` or `/exec?action=search&phone=98765`
 
 Response:
 ```json
@@ -58,27 +57,27 @@ Body:
     "CustomerName": "John Doe",
     "Phone": "9876543210",
     "Product": "PlayStation 5",
-    "Issue": "HDMI not working",
+    "FaultDescription": "HDMI not working",
     "EstimatedTime": "2 days",
-    "AssignedTo": "Ravi",
-    "Notes": "Urgent"
+    "AssignedEmployee": "ravi@example.com",
+    "EmployeeNotes": "Urgent"
   }
 }
 ```
 
 Response:
 ```json
-{ "success": true, "repairId": "GW-20250910-101530-123" }
+{ "success": true, "uniqueId": "rahul" }
 ```
 
-### POST /exec { action: "updateStatus", repairId, status, notes? }
-Allowed statuses: `Received`, `In Progress`, `Completed`, `Delivered`.
+### POST /exec { action: "updateStatus", uniqueId, status, notes? }
+Allowed statuses: `Received`, `In Progress`, `Completed`, `Handed Over`.
 
 Body:
 ```json
 {
   "action": "updateStatus",
-  "repairId": "GW-20250910-101530-123",
+  "uniqueId": "rahul",
   "status": "Completed",
   "notes": "Replaced HDMI IC"
 }
@@ -86,8 +85,11 @@ Body:
 
 Response:
 ```json
-{ "success": true, "repairId": "GW-...", "status": "Completed" }
+{ "success": true, "uniqueId": "rahul", "status": "Completed" }
 ```
+
+### POST /exec { action: "handover", uniqueId }
+Moves record to `HandedOver` sheet, sets `HandoverDate`, status `Handed Over`.
 
 ## Tips
 - If you change column order or names, update `HEADERS` in `Code.gs`.

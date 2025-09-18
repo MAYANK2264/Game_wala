@@ -1,8 +1,9 @@
 # GameWala Repairs - Flutter Frontend
 
-## Configure API URL
+## Configure API URL & Google Sign-In
 1. Deploy the Apps Script Web App and copy its URL ending with `/exec`.
-2. Open `lib/main.dart` and replace `REPLACE_WITH_YOUR_DEPLOYMENT_ID` with your deployment path or paste full URL into `_baseUrl`.
+2. Open `lib/main.dart` and set `_baseUrl` to that URL.
+3. Google Sign-In requires a SHA-1 for Android: set it up in your Firebase project if needed. For local testing, most devices work without Firebase config, but production should set up properly.
 
 Example:
 ```
@@ -21,7 +22,12 @@ flutter build apk --release
 ```
 The APK will be at `build/app/outputs/flutter-apk/app-release.apk`.
 
+If you need an app bundle:
+```
+flutter build appbundle --release
+```
+
 ## Notes
-- Uses `http` for API calls.
-- Basic validation and snackbars are included.
-- Role selection is local-only for MVP.
+- Uses Google Sign-In to obtain the user email; employees must be approved in the sheet.
+- Voice notes are saved to Google Drive via Apps Script and linked in the sheet.
+- Status colors: red Received, yellow In Progress, green Completed, blue Handed Over.

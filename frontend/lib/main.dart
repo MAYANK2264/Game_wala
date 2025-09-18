@@ -21,11 +21,12 @@ class GameWalaApp extends StatefulWidget {
 
 class _GameWalaAppState extends State<GameWalaApp> {
   String? _role; // 'Owner' or 'Employee'
-  String? _actorName; // Employee name for RBAC
+  String? _actorEmail; // user email for RBAC
+  String? _ownerEmail; // Owner's email for Google Sheets
   // Deployed Apps Script Web App URL
-  final String _baseUrl = 'https://script.google.com/macros/s/AKfycbxihRlGkzFfMHZMv-K2ZA91pMXwzDKP_ydXDeZRKMiEds8XXuQsw7vIPbB1qa4rL0UV/exec';
+  final String _baseUrl = 'https://script.google.com/macros/s/AKfycbyLXkyAcKhqWX_eTmDioTJFErNyV28KSwB8MnaVsQbvZMcDJkzxRuKK8PqPaa0E0oHC/exec';
 
-  late final ApiService _api = ApiService(baseUrl: _baseUrl);
+  ApiService get _api => ApiService(baseUrl: _baseUrl, ownerEmail: _ownerEmail, actorEmail: _actorEmail);
 
   @override
   Widget build(BuildContext context) {
@@ -36,17 +37,19 @@ class _GameWalaAppState extends State<GameWalaApp> {
         useMaterial3: true,
       ),
       home: _role == null
-          ? LoginScreen(onLogin: (role, actor) => setState(() { _role = role; _actorName = actor; }))
-          : _Home(role: _role!, actorName: _actorName, api: _api),
+          ? LoginScreen(onLogin: (role, actorEmail, ownerEmail) => setState(() { _role = role; _actorEmail = actorEmail; _ownerEmail = ownerEmail; }), api: _api)
+          : _Home(role: _role!, actorEmail: _actorEmail, ownerEmail: _ownerEmail, api: _api, onLogout: () => setState(() { _role = null; _actorEmail = null; _ownerEmail = null; })),
     );
   }
 }
 
 class _Home extends StatefulWidget {
-  const _Home({required this.role, required this.actorName, required this.api});
+  const _Home({required this.role, required this.actorEmail, required this.ownerEmail, required this.api, required this.onLogout});
   final String role;
-  final String? actorName;
+  final String? actorEmail;
+  final String? ownerEmail;
   final ApiService api;
+  final VoidCallback onLogout;
 
   @override
   State<_Home> createState() => _HomeState();
@@ -68,7 +71,7 @@ class _HomeState extends State<_Home> {
               Navigator.push(context, MaterialPageRoute(builder: (_) => AddRepairScreen(api: widget.api)));
               break;
             case '/update':
-              Navigator.push(context, MaterialPageRoute(builder: (_) => UpdateStatusScreen(api: widget.api, role: widget.role, actorName: widget.actorName)));
+              Navigator.push(context, MaterialPageRoute(builder: (_) => UpdateStatusScreen(api: widget.api, role: widget.role, actorEmail: widget.actorEmail)));
               break;
             case '/search':
               Navigator.push(context, MaterialPageRoute(builder: (_) => SearchRepairScreen(api: widget.api)));
@@ -82,19 +85,49 @@ class _HomeState extends State<_Home> {
           }
         },
       ),
-      if (isOwner) AllRepairsScreen(api: widget.api),
+      AllRepairsScreen(api: widget.api),
       SearchRepairScreen(api: widget.api),
     ];
 
     final tabs = <NavigationDestination>[
       const NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
-      if (isOwner) const NavigationDestination(icon: Icon(Icons.list), label: 'All Repairs'),
+      const NavigationDestination(icon: Icon(Icons.list), label: 'All Repairs'),
       const NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
     ];
 
     final navIndex = _tab.clamp(0, tabs.length - 1);
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text('GameWala Repairs - ${widget.role}'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Logout'),
+                  content: const Text('Are you sure you want to logout?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        widget.onLogout();
+                      },
+                      child: const Text('Logout'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: pages[navIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: navIndex,

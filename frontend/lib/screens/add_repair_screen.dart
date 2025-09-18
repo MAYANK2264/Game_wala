@@ -19,11 +19,11 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _phone = TextEditingController();
-  final _issue = TextEditingController();
+  final _fault = TextEditingController();
   final _estimated = TextEditingController();
   final _notes = TextEditingController();
   String _product = 'PlayStation 5';
-  String _assignedTo = 'Unassigned';
+  String _assignedEmployee = 'Unassigned';
   bool _loading = false;
 
   List<String> _products = const [
@@ -64,7 +64,7 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
           _products = products.isNotEmpty ? products : _products;
           _assignees = employees.isNotEmpty ? ['Unassigned', ...employees] : _assignees;
           if (!_products.contains(_product)) _product = _products.first;
-          if (!_assignees.contains(_assignedTo)) _assignedTo = _assignees.first;
+          if (!_assignees.contains(_assignedEmployee)) _assignedEmployee = _assignees.first;
         });
       }
     } catch (_) {}
@@ -74,7 +74,7 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
   void dispose() {
     _name.dispose();
     _phone.dispose();
-    _issue.dispose();
+    _fault.dispose();
     _estimated.dispose();
     _notes.dispose();
     _recorder.closeRecorder();
@@ -116,9 +116,9 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
             ),
             const SizedBox(height: 12),
             TextFormField(
-              controller: _issue,
+              controller: _fault,
               maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Issue', border: OutlineInputBorder()),
+              decoration: const InputDecoration(labelText: 'Fault Description', border: OutlineInputBorder()),
               validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
             ),
             const SizedBox(height: 12),
@@ -129,10 +129,10 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _assignedTo,
+              value: _assignedEmployee,
               items: _assignees.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-              onChanged: (v) => setState(() => _assignedTo = v ?? _assignedTo),
-              decoration: const InputDecoration(labelText: 'Assigned To', border: OutlineInputBorder()),
+              onChanged: (v) => setState(() => _assignedEmployee = v ?? _assignedEmployee),
+              decoration: const InputDecoration(labelText: 'Assigned Employee', border: OutlineInputBorder()),
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -212,21 +212,21 @@ class _AddRepairScreenState extends State<AddRepairScreen> {
         customerName: _name.text.trim(),
         phone: _phone.text.trim(),
         product: _product,
-        issue: _issue.text.trim(),
+        faultDescription: _fault.text.trim(),
         estimatedTime: _estimated.text.trim(),
-        assignedTo: _assignedTo,
-        notes: _notes.text.trim(),
-        voiceNoteBase64: b64,
-        voiceNoteFilename: filename,
+        assignedEmployee: _assignedEmployee == 'Unassigned' ? null : _assignedEmployee,
+        employeeNotes: _notes.text.trim(),
+        faultVoiceNoteBase64: b64,
+        faultVoiceNoteFilename: filename,
       );
       if (res['success'] == true) {
-        final id = res['repairId'];
+        final id = res['uniqueId'];
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Added. RepairID: $id'), backgroundColor: Colors.green),
+          SnackBar(content: Text('Added. ID: $id'), backgroundColor: Colors.green),
         );
         _formKey.currentState!.reset();
-        setState(() { _voiceFilePath = null; _product = _products.first; _assignedTo = _assignees.first; });
+        setState(() { _voiceFilePath = null; _product = _products.first; _assignedEmployee = _assignees.first; });
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

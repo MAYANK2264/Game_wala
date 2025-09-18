@@ -3,10 +3,10 @@ import 'package:gamewala_repairs/services/api_service.dart';
 import 'package:gamewala_repairs/widgets/status_chip.dart';
 
 class UpdateStatusScreen extends StatefulWidget {
-  const UpdateStatusScreen({super.key, required this.api, required this.role, required this.actorName});
+  const UpdateStatusScreen({super.key, required this.api, required this.role, required this.actorEmail});
   final ApiService api;
   final String role;
-  final String? actorName;
+  final String? actorEmail;
 
   @override
   State<UpdateStatusScreen> createState() => _UpdateStatusScreenState();
@@ -14,7 +14,7 @@ class UpdateStatusScreen extends StatefulWidget {
 
 class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _repairId = TextEditingController();
+  final _uniqueId = TextEditingController();
   final _notes = TextEditingController();
   String _status = 'Received';
   bool _loading = false;
@@ -37,11 +37,11 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text('Role: ${widget.role}${widget.actorName != null ? ' (${widget.actorName})' : ''}'),
+            Text('Role: ${widget.role}${widget.actorEmail != null ? ' (${widget.actorEmail})' : ''}'),
             const SizedBox(height: 8),
             TextFormField(
-              controller: _repairId,
-              decoration: const InputDecoration(labelText: 'RepairID', border: OutlineInputBorder()),
+              controller: _uniqueId,
+              decoration: const InputDecoration(labelText: 'Unique ID', border: OutlineInputBorder()),
               validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
             ),
             const SizedBox(height: 12),
@@ -80,11 +80,11 @@ class _UpdateStatusScreenState extends State<UpdateStatusScreen> {
     setState(() => _loading = true);
     try {
       final res = await widget.api.updateStatus(
-        repairId: _repairId.text.trim(),
+        uniqueId: _uniqueId.text.trim(),
         status: _status,
         notes: _notes.text.trim(),
         role: widget.role,
-        actorName: widget.actorName,
+        actorEmail: widget.actorEmail,
       );
       if (!mounted) return;
       if (res['success'] == true) {

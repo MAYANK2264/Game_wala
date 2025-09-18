@@ -11,15 +11,17 @@ class SearchRepairScreen extends StatefulWidget {
 }
 
 class _SearchRepairScreenState extends State<SearchRepairScreen> {
-  final _repairId = TextEditingController();
+  final _uniqueId = TextEditingController();
   final _customerName = TextEditingController();
+  final _phone = TextEditingController();
   List<Map<String, dynamic>> _results = [];
   bool _loading = false;
 
   @override
   void dispose() {
-    _repairId.dispose();
+    _uniqueId.dispose();
     _customerName.dispose();
+    _phone.dispose();
     super.dispose();
   }
 
@@ -31,13 +33,19 @@ class _SearchRepairScreenState extends State<SearchRepairScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           TextField(
-            controller: _repairId,
-            decoration: const InputDecoration(labelText: 'RepairID', border: OutlineInputBorder()),
+            controller: _uniqueId,
+            decoration: const InputDecoration(labelText: 'Unique ID', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _customerName,
             decoration: const InputDecoration(labelText: 'Customer Name', border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _phone,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(labelText: 'Phone', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -63,7 +71,7 @@ class _SearchRepairScreenState extends State<SearchRepairScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${item['RepairID']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text('${item['UniqueID']}', style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -86,8 +94,9 @@ class _SearchRepairScreenState extends State<SearchRepairScreen> {
     setState(() => _loading = true);
     try {
       final res = await widget.api.search(
-        repairId: _repairId.text.trim().isEmpty ? null : _repairId.text.trim(),
+        uniqueId: _uniqueId.text.trim().isEmpty ? null : _uniqueId.text.trim(),
         customerName: _customerName.text.trim().isEmpty ? null : _customerName.text.trim(),
+        phone: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
       );
       final data = (res['data'] as List?)?.cast<Map<String, dynamic>>() ?? [];
       setState(() => _results = data);

@@ -13,7 +13,7 @@ class _MastersScreenState extends State<MastersScreen> {
   final _employeeCtrl = TextEditingController();
   final _productCtrl = TextEditingController();
   bool _loading = true;
-  List<String> _employees = [];
+  List<Map<String, dynamic>> _employees = [];
   List<String> _products = [];
 
   @override
@@ -33,10 +33,11 @@ class _MastersScreenState extends State<MastersScreen> {
     setState(() => _loading = true);
     try {
       final res = await widget.api.getMasters();
+      final emps = await widget.api.getEmployees();
       if (res['success'] == true) {
         final m = res['data'] as Map<String, dynamic>;
         setState(() {
-          _employees = (m['employees'] as List?)?.cast<String>() ?? [];
+          _employees = emps;
           _products = (m['products'] as List?)?.cast<String>() ?? [];
         });
       }
@@ -66,7 +67,7 @@ class _MastersScreenState extends State<MastersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Manage Masters')),
+      appBar: AppBar(title: const Text('Manage Employees & Products')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -77,13 +78,54 @@ class _MastersScreenState extends State<MastersScreen> {
                   const Text('Employees', style: TextStyle(fontWeight: FontWeight.bold)),
                   Row(
                     children: [
-                      Expanded(child: TextField(controller: _employeeCtrl, decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Add employee name'))),
+                      Expanded(child: TextField(controller: _employeeCtrl, decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Add employee email'))),
                       const SizedBox(width: 8),
                       ElevatedButton(onPressed: () => _add('employee', _employeeCtrl), child: const Text('Add')),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  for (final e in _employees) ListTile(title: Text(e)),
+                  for (final e in _employees)
+                    ListTile(
+                      title: Text(e['Email'] ?? ''),
+                      subtitle: Text('Status: ${e['Status'] ?? ''}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: 'Approve',
+                            onPressed: () async {
+                              final email = '${e['Email'] ?? ''}';
+                              if (email.isEmpty) return;
+                              final res = await widget.api.approveEmployee(email: email);
+                              if (!mounted) return;
+                              if (res['success'] == true) {
+                                await _load();
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Approved'), backgroundColor: Colors.green));
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: ${res['error']}'), backgroundColor: Colors.red));
+                              }
+                            },
+                            icon: const Icon(Icons.check_circle, color: Colors.green),
+                          ),
+                          IconButton(
+                            tooltip: 'Remove',
+                            onPressed: () async {
+                              final email = '${e['Email'] ?? ''}';
+                              if (email.isEmpty) return;
+                              final res = await widget.api.removeEmployee(email: email);
+                              if (!mounted) return;
+                              if (res['success'] == true) {
+                                await _load();
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Removed'), backgroundColor: Colors.green));
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: ${res['error']}'), backgroundColor: Colors.red));
+                              }
+                            },
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                          ),
+                        ],
+                      ),
+                    ),
                   const Divider(),
                   const Text('Products', style: TextStyle(fontWeight: FontWeight.bold)),
                   Row(
