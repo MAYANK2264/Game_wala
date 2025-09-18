@@ -24,7 +24,7 @@ class _GameWalaAppState extends State<GameWalaApp> {
   String? _actorEmail; // user email for RBAC
   String? _ownerEmail; // Owner's email for Google Sheets
   // Deployed Apps Script Web App URL
-  final String _baseUrl = 'https://script.google.com/macros/s/AKfycbyLXkyAcKhqWX_eTmDioTJFErNyV28KSwB8MnaVsQbvZMcDJkzxRuKK8PqPaa0E0oHC/exec';
+  final String _baseUrl = 'https://script.google.com/macros/s/AKfycbxAA8mKPYEA-5hc29OU3Tb-2yi6n4Ue0Hy6ZUL45Qqmlj_Gf2VrQg1phc6HNTLC7FO3/exec';
 
   ApiService get _api => ApiService(baseUrl: _baseUrl, ownerEmail: _ownerEmail, actorEmail: _actorEmail);
 
